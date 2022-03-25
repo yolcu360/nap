@@ -204,7 +204,7 @@ func (db *DB) slave(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int(1 + (atomic.AddUint64(&db.count, 1) % uint64(n-1)))
+	return int((atomic.AddUint64(&db.count, 1) % uint64(n-1)))
 }
 
 // Append adds a physical database to the list of physical databases
