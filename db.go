@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"strings"
-	"sync/atomic"
 	"time"
 )
 
@@ -204,7 +203,8 @@ func (db *DB) slave(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int(1 + (atomic.AddUint64(&db.count, 1) % uint64(n-1)))
+
+	return int(db.count % uint64(n))
 }
 
 // Append adds a physical database to the list of physical databases.
