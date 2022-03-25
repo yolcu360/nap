@@ -190,12 +190,12 @@ func (db *DB) SetConnMaxLifetime(d time.Duration) {
 	}
 }
 
-// Slave returns one of the physical databases which is a slave
+// Slave returns one of the physical databases which is a slave.
 func (db *DB) Slave() *sql.DB {
 	return db.pdbs[db.slave(len(db.pdbs))]
 }
 
-// Master returns the master physical database
+// Master returns the master physical database.
 func (db *DB) Master() *sql.DB {
 	return db.pdbs[0]
 }
@@ -204,10 +204,10 @@ func (db *DB) slave(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int((atomic.AddUint64(&db.count, 1) % uint64(n-1)))
+	return int(1 + (atomic.AddUint64(&db.count, 1) % uint64(n-1)))
 }
 
-// Append adds a physical database to the list of physical databases
+// Append adds a physical database to the list of physical databases.
 func (db *DB) Append(dbs ...*sql.DB) {
 	db.pdbs = append(db.pdbs, dbs...)
 }
