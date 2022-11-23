@@ -7,6 +7,9 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"go.elastic.co/apm/module/apmsql"
+	_ "go.elastic.co/apm/module/apmsql/pq"
 )
 
 // DB is a logical database with multiple underlying physical databases
@@ -25,7 +28,8 @@ func Open(driverName, dataSourceNames string) (*DB, error) {
 	db := &DB{pdbs: make([]*sql.DB, len(conns))}
 
 	err := scatter(len(db.pdbs), func(i int) (err error) {
-		db.pdbs[i], err = sql.Open(driverName, conns[i])
+		db.pdbs[i], err = apmsql.Open("postgres", conns[i])
+
 		return err
 	})
 
@@ -99,6 +103,7 @@ func (db *DB) Prepare(query string) (Stmt, error) {
 
 	err := scatter(len(db.pdbs), func(i int) (err error) {
 		stmts[i], err = db.pdbs[i].Prepare(query)
+
 		return err
 	})
 
@@ -119,12 +124,14 @@ func (db *DB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 
 	err := scatter(len(db.pdbs), func(i int) (err error) {
 		stmts[i], err = db.pdbs[i].PrepareContext(ctx, query)
+
 		return err
 	})
 
 	if err != nil {
 		return nil, err
 	}
+
 	return &stmt{db: db, stmts: stmts}, nil
 }
 
@@ -204,6 +211,7 @@ func (db *DB) slave(n int) int {
 	if n <= 1 {
 		return 0
 	}
+
 	return int((atomic.AddUint64(&db.count, 1) % uint64(n)))
 }
 

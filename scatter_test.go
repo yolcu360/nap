@@ -13,11 +13,12 @@ func TestScatter(t *testing.T) {
 	err := scatter(len(seq), func(i int) error {
 		if seq[i]%2 == 0 {
 			seq[i] *= seq[i]
+
 			return nil
 		}
+
 		return fmt.Errorf("%d is an odd fellow", seq[i])
 	})
-
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
