@@ -4,10 +4,6 @@ Nap is a library that abstracts access to master-slave physical SQL servers topo
 
 Nap requires Go version 1.8 or greater.
 
-## Master Node
-If you set true to USE_MASTER_AS_SLAVE, master node using for read operations. Also some queries only works with master.
-You can look to helper.go. 
-
 ## Install
 ```shell
 $ go get github.com/tsenart/nap
