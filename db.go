@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"os"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -20,27 +18,20 @@ import (
 // forming a single master multiple slaves topology.
 // Reads and writes are automatically directed to the correct physical db.
 type DB struct {
-	pdbs             []*sql.DB // Physical databases
-	count            uint64    // Monotonically incrementing counter on each query
-	useMasterAsSlave bool
+	pdbs  []*sql.DB // Physical databases
+	count uint64    // Monotonically incrementing counter on each query
 }
 
 // Open concurrently opens each underlying physical db.
 // dataSourceNames must be a semi-comma separated list of DSNs with the first
 // one being used as the master and the rest as slaves.
 func Open(driverName, dataSourceNames string) (*DB, error) {
-	useMasterAsSlave, err := strconv.ParseBool(os.Getenv("USE_MASTER_AS_SLAVE"))
-	if err != nil {
-		useMasterAsSlave = false // default
-	}
-
 	conns := strings.Split(dataSourceNames, ";")
 	db := &DB{
-		pdbs:             make([]*sql.DB, len(conns)),
-		useMasterAsSlave: useMasterAsSlave,
+		pdbs: make([]*sql.DB, len(conns)),
 	}
 
-	err = scatter(len(db.pdbs), func(i int) (err error) {
+	err := scatter(len(db.pdbs), func(i int) (err error) {
 		db.pdbs[i], err = apmsql.Open("postgres", conns[i])
 
 		return err
@@ -237,15 +228,11 @@ func (db *DB) Master() *sql.DB {
 }
 
 func (db *DB) slave(n int) int {
-	if n <= 1 && db.useMasterAsSlave {
+	if n <= 1 {
 		return 0
 	}
 
-	if db.useMasterAsSlave {
-		return int((atomic.AddUint64(&db.count, 1) % uint64(n)))
-	}
-
-	return int(1 + (atomic.AddUint64(&db.count, 1) % uint64(n-1)))
+	return int((atomic.AddUint64(&db.count, 1) % uint64(n)))
 }
 
 // Append adds a physical database to the list of physical databases.
